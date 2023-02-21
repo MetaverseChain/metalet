@@ -36,7 +36,7 @@ class Metalet {
         if (e.data.matchingData.to !== 'injectClient' || e.data.matchingData.from !== 'contentScript') {
           return;
         }
-        console.info('injectClient page | message come', e);
+        console.log('contentScript -> injectClient', e);
         const { matchingData } = e.data;
         const { funcId } = matchingData;
         if (funcId in this.msgMap && typeof this.msgMap[funcId] === 'function') {
@@ -71,43 +71,58 @@ class Metalet {
     });
   }
 
-  async getResult(result) {
-    if (!result) {
-      throw new Error('the result is empty');
-    }
-    if (result instanceof Promise) {
-      result = await result.then((res) => res).catch((err) => err);
-    }
-    const { code, msg, data } = result;
-    if (code !== 0) {
-      throw new Error(msg);
-    }
-    return data;
+  addMsgFunc(funcId, func) {
+    this.msgMap[funcId] = func;
   }
 
-  async getAccount() {
-    return this.sendMessage('getCurrentAccount');
+  async getPluginInfo() {
+    const res = await this.sendMessage('getPluginInfo');
+    return res.data;
   }
 
   async checkLogin() {
-    const currentAccount = await this.getResult(this.getAccount()).catch(() => false);
-    if (!currentAccount) {
-      return false;
-    }
-    return true;
+    const res = await this.sendMessage('checkIsLogin');
+    return res.data;
   }
 
-  async getBalance(address) {
-    if (address) {
-      return this.sendMessage('getBalance', { address });
-    }
-    const currentAccount = await this.getResult(this.getAccount());
-    return this.sendMessage('getBalance', { address: currentAccount.address });
+  async getAccount() {
+    const res = await this.sendMessage('getCurrentAccount');
+    return res.data;
+  }
+
+  async getPublicKey() {
+    const res = await this.getAccount();
+    return res.publicKey;
   }
 
   async getAddress() {
-    const currentAccount = await this.getResult(this.getAccount());
-    return currentAccount.address;
+    const res = await this.getAccount();
+    return res.address;
+  }
+
+  async getBalance() {
+    const address = await this.getAddress();
+    const res = await this.sendMessage('getBalance', { address });
+    return res.data;
+  }
+
+  async connectWallet(origin = location.origin) {
+    const type = 'wattingConnect';
+    const clientId = this.clientId;
+    const time = Date.now();
+    const funcId = `${clientId}_${type}_${time}`;
+
+    await this.sendMessage('connectWallet', {
+      origin,
+      funcId,
+      type,
+      clientId,
+      time,
+    });
+
+    return new Promise((resolve) => {
+      this.msgMap[funcId] = (res) => resolve(res);
+    });
   }
 }
 

@@ -138,7 +138,7 @@ export async function checkNetwork() {
   // } else {
   //   return 'main';
   // }
-  return 'test';
+  return config.CONFIG_NETWORK_TYPE;
 }
 
 // sleep

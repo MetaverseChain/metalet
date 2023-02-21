@@ -3,6 +3,14 @@ import { Api, API_NET, API_TARGET, mvc, FtManager, NftManager } from '@/lib/meta
 import config, { changeNetworkType } from '@/config';
 import { create, select, update } from '@/util/db';
 import {
+  storageGet,
+  storageSet,
+  getChromePluginInfo,
+  makeMessageResponse,
+  getCurrentTab,
+  openWindow,
+} from '@/util/chromeUtil';
+import {
   getFtBalance,
   getMetaIdByZeroAddress,
   getNftSummary,
@@ -10,6 +18,7 @@ import {
   getShowDIDUserInfo,
   uploadMetaIdRaw,
   uploadXpub,
+  getXpubLiteBlance,
 } from '@/api/common';
 import { initMetaId, repairMetaNode } from './helper';
 
@@ -18,14 +27,19 @@ const P2PKH_UNLOCK_SIZE = 1 + 1 + 71 + 1 + 33;
 const P2PKH_DUST_AMOUNT = 1;
 
 let mvcApi;
-let ft;
-let nft;
 let feeb = config.CONFIG_TX_FEEB;
 
 // 初始化api
-export function initApi() {
+export function initApi(networkType = config.networkType) {
   if (!mvcApi) {
-    mvcApi = new Api(API_NET.MAIN, API_TARGET.MVC);
+    if (networkType === 'test') {
+      mvc.Networks.defaultNetwork = mvc.Networks.testnet;
+      mvcApi = new Api(API_NET.TEST, API_TARGET.MVC);
+    } else {
+      mvc.Networks.defaultNetwork = mvc.Networks.mainnet;
+      mvcApi = new Api(API_NET.MAIN, API_TARGET.MVC);
+    }
+
     mvcApi.authorize({
       authorization: metaSvAuthorization,
     });
@@ -45,8 +59,10 @@ export async function createAccount(message) {
   const mnemonic = Mnemonic.fromString(mnemonicStr);
   const HDPrivateKey = mnemonic.toHDPrivateKey().deriveChild(derivationPath);
   const privateKey = HDPrivateKey.deriveChild(0).deriveChild(0).privateKey; // 0/0地址
+  const publicKey = HDPrivateKey.deriveChild(0).deriveChild(0).publicKey;
   const address = privateKey.toAddress().toString();
   const wif = privateKey.toString();
+  const pubWif = publicKey.toString();
   const xpub = HDPrivateKey.xpubkey;
   const xprv = HDPrivateKey.xprivkey;
   const timestamp = Date.now();
@@ -56,6 +72,7 @@ export async function createAccount(message) {
     hasOne = {
       address,
       wif,
+      publicKey: pubWif,
       mnemonicStr,
       alias,
       password,
@@ -75,9 +92,16 @@ export async function createAccount(message) {
 // 获取余额
 export async function getBalance(message) {
   initApi();
-  const { address } = message.data;
+  const { address, xpub } = message.data;
   let { pendingBalance, balance } = await mvcApi.getBalance(address);
-  return balance + pendingBalance;
+  let result = balance + pendingBalance;
+  if (xpub) {
+    const xpubRes = await getXpubLiteBlance(xpub)
+      .then((res) => res.balance)
+      .catch(() => 0);
+    result = Math.max(result, xpubRes);
+  }
+  return result;
 }
 
 // 获取utxo
@@ -110,6 +134,14 @@ export async function sendAmount(message) {
     );
     privateKeys.push(mvc.PrivateKey.fromString(wif));
   });
+  // // add opreturn
+  // tx.addOutput(
+  //   new mvc.Transaction.Output({
+  //     script: mvc.Script.buildDataOut(sendAddress),
+  //     satoshis: 0,
+  //   })
+  // );
+
   // add output
   tx.addOutput(
     new mvc.Transaction.Output({
@@ -200,14 +232,17 @@ export async function restoreAccount(message) {
     const mnemonic = Mnemonic.fromString(mnemonicStr);
     const HDPrivateKey = mnemonic.toHDPrivateKey().deriveChild(derivationPath);
     const privateKey = HDPrivateKey.deriveChild(0).deriveChild(0).privateKey;
+    const publicKey = HDPrivateKey.deriveChild(0).deriveChild(0).publicKey;
     const address = privateKey.toAddress().toString();
     const wif = privateKey.toString();
+    const pubWif = publicKey.toString();
     const xpub = HDPrivateKey.xpubkey;
     const xprv = HDPrivateKey.xprivkey;
 
     obj = {
       address,
       wif,
+      publicKey: pubWif,
       mnemonicStr,
       alias: null,
       password: null,
@@ -283,7 +318,20 @@ export async function checkOrCreateMetaId(message) {
 
   // 10分钟内的新建忽略校验
   if (userMetaIdInfo && timestamp && timestamp + 600000 >= Date.now()) {
-    return;
+    return hasOne;
+  }
+  // 如果齐全
+  if (
+    userMetaIdInfo &&
+    userMetaIdInfo.email &&
+    userMetaIdInfo.infoTxId &&
+    userMetaIdInfo.metaId &&
+    userMetaIdInfo.metaIdRaw &&
+    userMetaIdInfo.name &&
+    userMetaIdInfo.phone &&
+    userMetaIdInfo.protocolTxId
+  ) {
+    return hasOne;
   }
 
   // 预设值
@@ -304,20 +352,24 @@ export async function checkOrCreateMetaId(message) {
     };
   });
   if (metaIdCode !== 200 || !metaIdResult) {
-    const userMetaIdInfoRes = await initMetaId(mvcApi, HDPrivateKey, userInfo, feeb).catch((err) => {
+    const { sendRawTxList, userMetaIdInfoRes } = await initMetaId(mvcApi, HDPrivateKey, userInfo, feeb).catch((err) => {
       console.log(err);
       return null;
     });
     hasOne.userMetaIdInfo = userMetaIdInfoRes;
     hasOne.timestamp = Date.now();
     await update(hasOne);
-    if (userMetaIdInfoRes?.metaIdRaw) {
-      await uploadMetaIdRaw({
-        type: 13,
-        raw: userMetaIdInfoRes.metaIdRaw,
-      });
+
+    if (sendRawTxList.length) {
+      for (let i = 0; i <= sendRawTxList.length; i++) {
+        await uploadMetaIdRaw({
+          type: 13,
+          raw: sendRawTxList[i],
+        });
+      }
       await uploadXpub(xpub);
     }
+
     return hasOne;
   }
 
@@ -330,6 +382,7 @@ export async function checkOrCreateMetaId(message) {
       result: null,
     };
   });
+  console.log('did', didCode, didResult);
   if (didCode !== 200 || !didResult) {
     const userMetaIdInfoRes = await repairMetaNode(mvcApi, HDPrivateKey, userInfo, feeb, {
       code: didCode,
@@ -362,12 +415,9 @@ export async function changeNetwork(message) {
 
 // 获取当前网络
 export async function getNetwork() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['networkType'], (res) => {
-      const resNetwork = (res && res.networkType) || res;
-      resolve(resNetwork);
-    });
-  });
+  const res = await storageGet('networkType');
+  const resNetwork = (res && res.networkType) || res;
+  return resNetwork;
 }
 
 // 获取ft列表
@@ -449,6 +499,7 @@ export async function transferFt(message) {
     codehash: codeHash,
     genesis,
   });
+  return res;
 }
 
 // transfer nft
@@ -477,6 +528,7 @@ export async function transferNft(message) {
         senderPrivateKey: wif,
         tokenIndex: findOne.tokenIndex,
       });
+      return res;
     }
   }
 }
@@ -485,17 +537,76 @@ export async function transferNft(message) {
 export async function saveCurrentAccount(message) {
   const { xprv } = message.data;
   if (xprv) {
-    chrome.storage.sync.set({
-      currentAccount: message.data,
-    });
+    await storageSet('currentAccount', message.data);
   }
 }
 
 // 获取当前账号
 export async function getCurrentAccount(message) {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['currentAccount'], (res) => {
-      resolve((res && res.currentAccount) || res);
+  const res = await storageGet('currentAccount');
+  const account = (res && res.currentAccount) || res;
+  // if (account && account.xprv) {
+  //   delete account.xprv;
+  // }
+  // if (account && account.wif) {
+  //   delete account.wif;
+  // }
+  // if (account && account.mnemonicStr) {
+  //   delete account.mnemonicStr;
+  // }
+  return account;
+}
+
+// 获取插件信息
+export async function getPluginInfo(message) {
+  return getChromePluginInfo();
+}
+
+// 连接钱包
+export async function connectWallet(message) {
+  const { origin, funcId, type, clientId, time } = message.data;
+  const { connectUrl } = getChromePluginInfo();
+  const curTab = await getCurrentTab();
+  const url = `${connectUrl}?origin=${encodeURIComponent(
+    origin
+  )}&funcId=${funcId}&time=${time}&clientId=${clientId}&type=${type}&tabId=${curTab.id}&windowId=${curTab.windowId}`;
+
+  setTimeout(() => {
+    openWindow(url, {
+      focused: true,
+      width: 375,
+      height: 667,
+      type: 'popup',
     });
-  });
+  }, 0);
+}
+
+export async function connectWalletConfirm(message) {
+  const { origin, xprv, flag, funcId, type, clientId, time, tabId, windowId } = message.data;
+  const finalResult = makeMessageResponse(
+    {
+      type,
+      clientId,
+      time,
+      funcId,
+      from: 'background',
+      to: 'contentScript',
+    },
+    flag,
+    0,
+    'ok'
+  );
+  chrome.tabs.sendMessage(Number(tabId), finalResult);
+}
+
+// 检查是否已经连接
+export async function checkIsConnect(message) {}
+
+// 检查是否已经登陆
+export async function checkIsLogin(message) {
+  const res = await storageGet('currentAccount');
+  if (res && res.currentAccount && res.currentAccount.xprv) {
+    return true;
+  }
+  return false;
 }

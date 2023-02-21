@@ -28,9 +28,19 @@ export function makeMessageResponse(matchingData = {}, data = null, code = ERR_C
   return result;
 }
 
-export function openTab(url, callback, otherParams = {}) {
-  chrome?.tabs?.create({ ...otherParams, url }, function (tab) {
-    if (typeof callback === 'function') callback(tab);
+export function openTab(url, otherParams = {}) {
+  return new Promise((resolve) => {
+    chrome?.tabs?.create({ ...otherParams, url }, function (tab) {
+      resolve(tab);
+    });
+  });
+}
+
+export function openWindow(url, otherParams = {}) {
+  return new Promise((resolve) => {
+    chrome?.windows?.create({ ...otherParams, url }, function (tab) {
+      resolve(tab);
+    });
   });
 }
 
@@ -40,7 +50,6 @@ export function initExtPageMessageListener(customValidFunc) {
   }
 
   chrome?.runtime?.onMessage?.addListener((message, sender, sendResponse) => {
-    console.info('ext page | message come', message, sender);
     try {
       if (!message) {
         throw new Error('no response message');
@@ -48,6 +57,7 @@ export function initExtPageMessageListener(customValidFunc) {
       if (!message.matchingData) {
         throw new Error('no response matchingData');
       }
+      console.log(`${message.matchingData.from} -> ${message.matchingData.to}`, message);
       const { matchingData } = message;
       const { funcId } = matchingData;
       if (
@@ -102,5 +112,57 @@ export function sendMessageFromExtPageToBackground(
       initExtPageMessageListener.msgMap[funcId] = null;
       delete initExtPageMessageListener.msgMap[funcId];
     };
+  });
+}
+
+export function storageGet(key) {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(Array.isArray(key) ? key : [key], (res) => {
+      resolve(res);
+    });
+  });
+}
+
+export function storageSet(key, value) {
+  return new Promise((resolve) => {
+    chrome.storage.sync.set(
+      {
+        [key]: value,
+      },
+      () => {
+        resolve();
+      }
+    );
+  });
+}
+
+export function getChromePluginInfo() {
+  const pluginId = chrome.runtime.id;
+  const popupUrl = `chrome-extension://${pluginId}/popup.html`;
+  const loginUrl = popupUrl + '#/welcome';
+  const connectUrl = popupUrl + '#/connect';
+  return {
+    pluginId,
+    popupUrl,
+    loginUrl,
+    connectUrl,
+  };
+}
+
+export function getCurrentTab() {
+  return new Promise((resolve) => {
+    chrome.tabs.getCurrent((tab) => {
+      if (tab) {
+        resolve(tab);
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs.length > 0) {
+            resolve(tabs[0]);
+          } else {
+            resolve();
+          }
+        });
+      }
+    });
   });
 }

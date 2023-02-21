@@ -17,20 +17,19 @@ export class Net {
     if (config && config.headers) {
       config.headers = toLowerHeader(config.headers);
     }
-    // let _process = process as any;
 
     if (config && config.headers) {
       //remove unsafe header,should be added in browser
       delete config.headers['accept-encoding'];
+
+      return BrowserNet.httpGet(url, params, null, config);
     }
-    return BrowserNet.httpGet(url, params, null, config);
   }
 
   static httpPost(url: string, params: any, config?: any) {
     if (config && config.headers) {
       config.headers = toLowerHeader(config.headers);
     }
-    // let _process = process as any;
 
     if (config && config.headers) {
       delete config.headers['accept-encoding'];

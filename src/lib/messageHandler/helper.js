@@ -125,6 +125,7 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
 
   // 假设对象(最后返回这对象)
   const { name, email, phone } = userInfo;
+  let sendRawTxList = [];
   let userMetaIdInfo = {
     metaId: '',
     protocolTxId: '',
@@ -150,8 +151,10 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     utxos: utxoTmp,
     feeb,
   }).then(async (res) => {
+    console.log('resres321', res);
     userMetaIdInfo.metaId = res.id;
     userMetaIdInfo.metaIdRaw = res.toString();
+    sendRawTxList.push(res.toString());
     await sleep();
     utxoTmp = await getUtxos(mvcApi, rootAddress.toString());
     for (let utxo of utxoTmp) {
@@ -172,6 +175,7 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     feeb,
   }).then(async (res) => {
     userMetaIdInfo.protocolTxId = res.id;
+    sendRawTxList.push(res.toString());
     await sleep();
     utxoTmp = await getUtxos(mvcApi, rootAddress.toString());
     for (let utxo of utxoTmp) {
@@ -192,6 +196,7 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     feeb,
   }).then(async (res) => {
     userMetaIdInfo.infoTxId = res.id;
+    sendRawTxList.push(res.toString());
     await sleep();
     utxoTmp = await getUtxos(mvcApi, infoAddress.toString());
     for (let utxo of utxoTmp) {
@@ -213,6 +218,7 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     feeb,
   }).then(async (res) => {
     userMetaIdInfo.name = res.id;
+    sendRawTxList.push(res.toString());
     await sleep();
     utxoTmp = await getUtxos(mvcApi, infoAddress.toString());
     for (let utxo of utxoTmp) {
@@ -235,6 +241,7 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     feeb,
   }).then(async (res) => {
     userMetaIdInfo.email = res.id;
+    sendRawTxList.push(res.toString());
     await sleep();
     utxoTmp = await getUtxos(mvcApi, infoAddress.toString());
     for (let utxo of utxoTmp) {
@@ -247,7 +254,7 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     mvcApi,
     HDPrivateKey,
     nodeName: 'phone',
-    parentTxId: 'userMetaIdInfo.infoTxId',
+    parentTxId: userMetaIdInfo.infoTxId,
     metaIdTag,
     version: 'NULL',
     utxos: utxoTmp,
@@ -256,10 +263,12 @@ export async function initMetaId(mvcApi, HDPrivateKey, userInfo, feeb) {
     changeAddress: rootAddress.toString(),
     feeb,
   }).then((res) => {
+    console.log('初始化PHONE', res);
     userMetaIdInfo.phone = res.id;
+    sendRawTxList.push(res.toString());
   });
 
-  return userMetaIdInfo;
+  return { userMetaIdInfo, sendRawTxList };
 }
 
 // 创建节点
@@ -270,7 +279,7 @@ export async function createNode({
   metanetName = 'mvc',
   nodeName = '',
   metaIdTag = 'metaid',
-  appId = 'NULL',
+  appId = 'WalletTag:Metalet',
   encrypt = 0,
   version = '1.0.1',
   data = 'NULL',
@@ -289,7 +298,7 @@ export async function createNode({
     data = eciesEncryptData(data, nodePrivateKey, nodePublicKey).toString('hex');
   }
 
-  const scriptPlayload = [
+  const scriptPayload = [
     metanetName,
     nodePublicKey.toString(),
     parentTxId,
@@ -320,10 +329,10 @@ export async function createNode({
   tx.from(_utxos);
 
   // add output
-  if (scriptPlayload) {
+  if (scriptPayload) {
     tx.addOutput(
       new mvc.Transaction.Output({
-        script: mvc.Script.buildSafeDataOut(scriptPlayload),
+        script: mvc.Script.buildSafeDataOut(scriptPayload),
         satoshis: 0,
       })
     );
@@ -563,12 +572,13 @@ export async function repairMetaNode(mvcApi, HDPrivateKey, userInfo, feeb, didCh
   }
 
   if (!userMetaIdInfo.phone) {
+    console.log('userMetaIdInfo.phone is null', 123);
     // 创建phone节点
     await createNode({
       mvcApi,
       HDPrivateKey,
       nodeName: 'phone',
-      parentTxId: 'userMetaIdInfo.infoTxId',
+      parentTxId: userMetaIdInfo.infoTxId,
       metaIdTag,
       version: 'NULL',
       utxos: utxoTmp,

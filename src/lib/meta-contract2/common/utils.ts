@@ -1,6 +1,9 @@
 import { toHex } from '../scryptlib';
 import * as mvc from '../mvc';
 import * as TokenUtil from './tokenUtil';
+const Signature = mvc.crypto.Signature;
+
+export const sighashType = Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
 
 export function getDustThreshold(lockingScriptSize: number) {
   return 1;
@@ -35,13 +38,13 @@ export function getVarPushdataHeader(n: number): Buffer {
 
 export enum CONTRACT_TYPE {
   P2PKH,
-  MCP01_NFT,
-  MCP01_NFT_GENESIS,
-  MCP01_NFT_UNLOCK_CONTRACT_CHECK,
-  MCP02_TOKEN,
-  MCP02_TOKEN_GENESIS,
-  MCP02_TOKEN_TRANSFER_CHECK,
-  MCP02_TOKEN_UNLOCK_CONTRACT_CHECK,
+  BCP01_NFT,
+  BCP01_NFT_GENESIS,
+  BCP01_NFT_UNLOCK_CONTRACT_CHECK,
+  BCP02_TOKEN,
+  BCP02_TOKEN_GENESIS,
+  BCP02_TOKEN_TRANSFER_CHECK,
+  BCP02_TOKEN_UNLOCK_CONTRACT_CHECK,
   OTHER,
 }
 export type SigHashInfo = {

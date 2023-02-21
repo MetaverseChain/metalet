@@ -18,6 +18,24 @@ type ResData = {
   msg: string;
 };
 
+type SensibleQueryUtxo = {
+  address?: string;
+  codehash?: string;
+  genesis?: string;
+  height?: number;
+  idx?: number;
+  isNFT?: boolean;
+  satoshi?: number;
+  scriptPk?: string;
+  scriptType?: string;
+  tokenAmount?: string;
+  tokenDecimal?: number;
+  tokenIndex?: string;
+  txid?: string;
+  vout?: number;
+  metaTxId?: string;
+  metaOutputIndex?: number;
+};
 export class MVC implements ApiBase {
   serverBase: string;
   authorization: string;
@@ -115,8 +133,9 @@ export class MVC implements ApiBase {
 
     if (!_res.txid) {
       console.log(`广播出错：${_res.message.toString()}`);
+      throw new Error(`${_res.message.toString()}`);
     }
-    return _res;
+    return _res.txid;
   }
 
   /**

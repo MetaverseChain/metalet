@@ -1,4 +1,5 @@
-import * as bsv from '../mvc';
+import * as mvc from '../mvc';
+import { Bytes } from '../scryptlib';
 import * as BN from '../bn.js';
 
 export const RABIN_SIG_LEN = 384;
@@ -38,7 +39,7 @@ export let getTxIdBuf = function (txid: string) {
 };
 
 export let getScriptHashBuf = function (scriptBuf: Buffer) {
-  const buf = Buffer.from(bsv.crypto.Hash.sha256ripemd160(scriptBuf));
+  const buf = Buffer.from(mvc.crypto.Hash.sha256ripemd160(scriptBuf));
   return buf;
 };
 
@@ -102,7 +103,7 @@ export let getRabinPubKeyHashArray = function (rabinPubKeys: BN[]) {
   for (let i = 0; i < rabinPubKeys.length; i++) {
     buf = Buffer.concat([
       buf,
-      bsv.crypto.Hash.sha256ripemd160(this.toBufferLE(rabinPubKeys[i].toString(16), this.RABIN_SIG_LEN)),
+      mvc.crypto.Hash.sha256ripemd160(this.toBufferLE(rabinPubKeys[i].toString(16), this.RABIN_SIG_LEN)),
     ]);
   }
   return buf;
@@ -115,3 +116,97 @@ export function getOutpointBuf(txid: string, index: number): Buffer {
   let buf = Buffer.concat([txidBuf, indexBuf]);
   return buf;
 }
+
+export const getEmptyTxOutputProof = function () {
+  const data = {
+    txHeader: new Bytes(''),
+    hashProof: new Bytes(''),
+    satoshiBytes: new Bytes(''),
+    scriptHash: new Bytes(''),
+  };
+  return data;
+};
+
+export const buildScriptData = function (data: Buffer) {
+  let res = Buffer.concat([data, getUInt32Buf(0), getUInt8Buf(255)]);
+  const pushDataLen = getOpPushDataLen(res.length);
+  res.writeUInt32LE(pushDataLen + data.length, data.length);
+  return res;
+};
+
+export const getOpPushDataLen = function (dataLen: number) {
+  if (dataLen <= 75) {
+    return 1;
+  } else if (dataLen <= 255) {
+    return 2;
+  } else if (dataLen <= 65535) {
+    return 3;
+  } else {
+    return 5;
+  }
+};
+
+export function getTxidInfo(tx: mvc.Transaction) {
+  const writer: any = new mvc.encoding.BufferWriter();
+  writer.writeUInt32LE(tx.version);
+  writer.writeUInt32LE(tx.nLockTime);
+  writer.writeUInt32LE(tx.inputs.length);
+  writer.writeUInt32LE(tx.outputs.length);
+
+  const inputWriter: any = new mvc.encoding.BufferWriter();
+  const inputWriter2: any = new mvc.encoding.BufferWriter();
+  for (const input of tx.inputs) {
+    inputWriter.writeReverse(input.prevTxId);
+    inputWriter.writeUInt32LE(input.outputIndex);
+    inputWriter.writeUInt32LE(input.sequenceNumber);
+
+    inputWriter2.write(mvc.crypto.Hash.sha256(input.script.toBuffer()));
+  }
+  const inputHashProof = inputWriter.toBuffer();
+  writer.write(mvc.crypto.Hash.sha256(inputHashProof));
+  writer.write(mvc.crypto.Hash.sha256(inputWriter2.toBuffer()));
+
+  const outputWriter: any = new mvc.encoding.BufferWriter();
+  for (const output of tx.outputs) {
+    outputWriter.writeUInt64LEBN(output.satoshisBN);
+    outputWriter.write(mvc.crypto.Hash.sha256(output.script.toBuffer()));
+  }
+  const outputHashProof = outputWriter.toBuffer();
+  writer.write(mvc.crypto.Hash.sha256(outputHashProof));
+
+  const txHeader = writer.toBuffer().toString('hex');
+  return {
+    txHeader,
+    inputHashProof: inputHashProof.toString('hex'),
+    outputHashProof: outputHashProof.toString('hex'),
+  };
+}
+
+export const getTxInputProof = function (tx: mvc.Transaction, inputIndex: number) {
+  const info = getTxidInfo(tx);
+  const txHeader = new Bytes(info.txHeader);
+  const input = tx.inputs[inputIndex];
+  const res = {
+    hashProof: new Bytes(info.inputHashProof),
+    txHash: new Bytes(
+      Buffer.from(input.prevTxId as any, 'hex')
+        .reverse()
+        .toString('hex')
+    ),
+    outputIndexBytes: new Bytes(getUInt32Buf(input.outputIndex).toString('hex')),
+    sequenceBytes: new Bytes(getUInt32Buf(input.sequenceNumber).toString('hex')),
+  };
+  return [res, txHeader];
+};
+
+export const getTxOutputProof = function (tx: mvc.Transaction, outputIndex: number) {
+  const info = getTxidInfo(tx);
+  const output = tx.outputs[outputIndex];
+  const res = {
+    txHeader: new Bytes(info.txHeader),
+    hashProof: new Bytes(info.outputHashProof),
+    satoshiBytes: new Bytes(getUInt64Buf(output.satoshis).toString('hex')),
+    scriptHash: new Bytes(mvc.crypto.Hash.sha256(output.script.toBuffer()).toString('hex')),
+  };
+  return res;
+};

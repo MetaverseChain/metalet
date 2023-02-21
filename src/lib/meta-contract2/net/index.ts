@@ -17,6 +17,7 @@ export class Net {
     if (config && config.headers) {
       config.headers = toLowerHeader(config.headers);
     }
+    // let _process = process as any;
 
     if (config && config.headers) {
       //remove unsafe header,should be added in browser
@@ -29,6 +30,7 @@ export class Net {
     if (config && config.headers) {
       config.headers = toLowerHeader(config.headers);
     }
+    // let _process = process as any;
 
     if (config && config.headers) {
       delete config.headers['accept-encoding'];

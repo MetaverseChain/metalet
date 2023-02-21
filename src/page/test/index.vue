@@ -64,7 +64,7 @@ export default {
         phone: '000',
       });
       // const res = await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
-      // console.log(res);
+      console.log(res);
     },
   },
 };

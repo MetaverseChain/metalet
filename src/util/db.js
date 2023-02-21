@@ -7,7 +7,6 @@ export function initDb() {
     const indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
     const req = indexedDB.open(dbName, 1);
     req.onsuccess = function (event) {
-      console.log('open db success');
       db = event.target.result;
       resolve(db);
     };
@@ -16,7 +15,6 @@ export function initDb() {
       reject();
     };
     req.onupgradeneeded = function (event) {
-      console.log('open db upgrad');
       db = event.target.result;
       if (!db.objectStoreNames.contains(storeName)) {
         const objectStore = db.createObjectStore(storeName, { keyPath: 'xprv' });

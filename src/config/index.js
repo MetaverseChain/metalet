@@ -1,28 +1,19 @@
+import { storageSet } from '@/util/chromeUtil';
+
 const appConf = {
   env: process.env.env,
   mode: process.env.mode,
   version: process.env.version,
-  networkType: 'test',
+  networkType: process.env.CONFIG_NETWORK_TYPE,
   ...process.env.appEnv,
 };
 
 export async function changeNetworkType(val) {
-  return new Promise((resolve) => {
-    let isOk = false;
-    appConf.networkType = val;
-    chrome.storage.sync.set(
-      {
-        networkType: val,
-      },
-      () => {
-        isOk = true;
-        resolve();
-      }
-    );
-    setTimeout(() => {
-      if (!isOk) resolve();
-    }, 2000);
-  });
+  appConf.networkType = val;
+  if (chrome?.storage?.sync?.set) {
+    await storageSet('networkType', val);
+  }
+  return val;
 }
 
 export default appConf;

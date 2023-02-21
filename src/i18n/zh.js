@@ -10,9 +10,11 @@ export default {
   fail: '失败',
   copy: '复制',
   comingSoon: '敬请期待',
+  functionWillComingSoon: '该功能即将上线,敬请期待',
   empty: '暂无数据',
   and: '和',
   to: '给',
+  loading: '加载中',
   login: {
     welcome: '欢迎使用',
     welcome_2: 'Metalet是一个帮助你连接到区块链的工具.',
@@ -49,6 +51,7 @@ export default {
     configurations: '配置',
     feeb: '费率',
     language: '语言',
+    publicKey: '公钥',
   },
   error: {
     indexDbNotSupport: '您的浏览器不支持indexDb, 请升级您的浏览器',
@@ -92,5 +95,8 @@ export default {
     sendAmount: '交易金额',
     fee: '小费',
     balance: '余额',
+  },
+  connect: {
+    allow: '是否允许该网站连接钱包?',
   },
 };

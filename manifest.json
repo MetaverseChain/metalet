@@ -17,7 +17,7 @@
     "http://mvc.showmoney.app/",
     "https://mvc.showmoney.app/"
   ],
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "activeTab"],
   "background": {
     "service_worker": "background.js"
   },

@@ -54,7 +54,6 @@
     "core-js": "2",
     "dayjs": "^1.11.5",
     "decimal.js": "^10.3.1",
-    "meta-contract": "^0.0.5",
     "mvc-lib": "^1.0.5",
     "mvc-scryptlib": "^1.0.0",
     "qrcode": "^1.5.1",

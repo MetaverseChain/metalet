@@ -117,11 +117,14 @@ export default {
   created() {
     this.getMnemonicWords();
   },
+  computed: {
+    ...mapGetters('system', ['config', 'locale', 'networkType']),
+  },
   methods: {
     ...mapActions('account', ['setCurrentAccount']),
-    ...mapGetters('system', ['config', 'locale', 'networkType']),
     async getMnemonicWords() {
       const { data } = await sendMessageFromExtPageToBackground('getMnemonicWords');
+
       this.mnemonicWords = data;
     },
     async createAccount() {
@@ -145,14 +148,17 @@ export default {
     },
     async restoreAccount() {
       const loading = this.$loading({});
+
       try {
+        console.log('this.derivationPath', this.mnemonicWords.join(' '));
         const { data } = await sendMessageFromExtPageToBackground('restoreAccount', {
           mnemonicStr: this.mnemonicStr,
           derivationPath: this.derivationPath,
           xprv: this.xprv,
           restoreType: this.restoreType,
         });
-        await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
+
+        // await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
         sendMessageFromExtPageToBackground('saveCurrentAccount', data);
         this.setCurrentAccount(data);
         loading.close();

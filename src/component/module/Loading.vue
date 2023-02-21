@@ -6,6 +6,8 @@
   </div>
 </template>
 <script>
+import i18n from '@/i18n';
+
 export default {
   name: 'mo-toast',
   props: {
@@ -15,7 +17,7 @@ export default {
     },
     message: {
       type: String,
-      default: 'loading...',
+      default: i18n('loading') + '...',
     },
     duration: {
       type: Number,

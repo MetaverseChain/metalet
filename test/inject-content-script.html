@@ -9,11 +9,15 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Test</title>
   </head>
+
   <body>
     <button onclick="handleCheckLogin()">check login</button>
     <button onclick="handleGetAccount()">get account</button>
     <button onclick="handleGetBalance()">get balance</button>
     <button onclick="handleGetPublicKey()">get public key</button>
+    <button onclick="handleGetAddress()">get address</button>
+    <button onclick="handleConnectWallet()">connect wallet</button>
+    <button onclick="handleGetPluginInfo()">get plugin info</button>
     <script>
       function handleCheckLogin() {
         metalet.checkLogin().then((res) => {
@@ -35,6 +39,24 @@
       }
       function handleGetPublicKey() {
         metalet.getPublicKey().then((res) => {
+          console.info(res);
+          alert(JSON.stringify(res));
+        });
+      }
+      function handleGetAddress() {
+        metalet.getAddress().then((res) => {
+          console.info(res);
+          alert(JSON.stringify(res));
+        });
+      }
+      function handleConnectWallet() {
+        metalet.connectWallet().then((res) => {
+          console.info(res);
+          alert(JSON.stringify(res));
+        });
+      }
+      function handleGetPluginInfo() {
+        metalet.getPluginInfo().then((res) => {
           console.info(res);
           alert(JSON.stringify(res));
         });

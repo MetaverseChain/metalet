@@ -1,4 +1,4 @@
-import * as BN from '../../bn.js';
+import * as BN from '../../bn.js/index.js';
 import * as proto from '../../common/protoheader';
 import { toHex } from '../../scryptlib';
 export const PROTO_VERSION = 1;

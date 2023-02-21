@@ -21,6 +21,9 @@
         <mo-form-item :label="$t('account.address')">
           <mo-input disabled="disabled" v-model="address" />
         </mo-form-item>
+        <mo-form-item :label="$t('account.publicKey')">
+          <mo-input disabled="disabled" v-model="publicKey" />
+        </mo-form-item>
         <!--        <mo-form-item :label="$t('account.HDPrivateKey')">-->
         <!--          <mo-input disabled="disabled" v-model="xprv" />-->
         <!--        </mo-form-item>-->
@@ -80,6 +83,7 @@ export default {
       address: '',
       xpub: '',
       feeb: 0,
+      publicKey: '',
     };
   },
   computed: {
@@ -108,6 +112,7 @@ export default {
       this.address = this.currentAccount.address;
       this.email = this.currentAccount.email;
       this.phone = this.currentAccount.phone;
+      this.publicKey = this.currentAccount.publicKey;
 
       const { data } = await sendMessageFromExtPageToBackground('getFeeb');
       this.feeb = data;

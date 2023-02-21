@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { initExtPageMessageListener, sendMessageFromExtPageToBackground } from '@/util/chromeUtil';
 
-console.log('contentScript loaded');
 const contentScriptId = `contentScript-${uuid()}`;
 
 // inject script
@@ -11,13 +10,6 @@ const targetEle = document?.querySelector('head') || document?.querySelector('bo
 targetEle.append(script);
 
 // init event
-function customValid(message) {
-  const { from, to } = message.matchingData;
-  if (from !== 'background' || to !== 'contentScript') {
-    return false;
-  }
-}
-
 initExtPageMessageListener();
 window.addEventListener('message', async (e) => {
   try {
@@ -28,11 +20,10 @@ window.addEventListener('message', async (e) => {
       // ignore
       return;
     }
-    console.info('contentScript page | message come', e);
-    const { type, data, clientId, time } = e.data;
+    console.log('injectClient -> contentScript', e);
+    const { type, data, clientId, time, specialNotSend } = e.data;
     const funcId = `${clientId}_${type}_${time}`;
     const res = await sendMessageFromExtPageToBackground(type, data, contentScriptId, 'contentScript');
-    console.log(res);
     if (res && res.matchingData) {
       res.matchingData.originClientId = res.matchingData.clientId;
       res.matchingData.clientId = clientId;

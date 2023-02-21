@@ -193,7 +193,7 @@ import { sendMessageFromExtPageToBackground } from '@/util/chromeUtil';
 import { getExchangeRate, getFtBalance } from '@/api/common';
 import ClipboardJS from 'clipboard';
 import i18n from '@/i18n';
-
+import { Decimal } from 'decimal.js';
 export default {
   name: 'page-home',
   computed: {
@@ -243,7 +243,6 @@ export default {
   },
   mounted() {
     this.fetchData();
-    this.fetchTokenInfo();
     this.drawQrCode();
     this.initClipboard();
   },
@@ -264,11 +263,13 @@ export default {
       const loading = this.$loading();
       // await this.getExchangeRate();
       await this.getBalance();
+      await this.fetchTokenInfo();
       loading.close();
     },
     async getBalance() {
       const { data } = await sendMessageFromExtPageToBackground('getBalance', {
         address: this.account.address,
+        xpub: this.account.xpub,
       });
       this.balance = data;
     },
@@ -318,7 +319,9 @@ export default {
       if (satoshi < 2000) {
         return this.$toast({ message: i18n('home.amountMoreThan2000') });
       }
-      if (satoshi + this.fee >= this.balance) {
+      if (
+        new Decimal(satoshi).add(new Decimal(this.fee).toNumber()).toNumber() >= new Decimal(this.balance).toNumber()
+      ) {
         return this.$toast({ message: i18n('home.amountNotEnough') });
       }
       // const { data } = await sendMessageFromExtPageToBackground('sendAmount', {

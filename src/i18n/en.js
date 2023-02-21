@@ -10,9 +10,11 @@ export default {
   fail: 'Fail',
   copy: 'Copy',
   comingSoon: 'Coming Soon',
+  functionWillComingSoon: 'The Function Will Coming Soon',
   empty: 'Empty',
   and: 'and',
   to: 'to',
+  loading: 'loading',
   login: {
     welcome: 'Welcome to',
     welcome_2: 'Metalet will help you connect to the blockchain.',
@@ -49,6 +51,7 @@ export default {
     configurations: 'Configurations',
     feeb: 'Rate',
     language: 'Language',
+    publicKey: 'PublicKey',
   },
   error: {
     indexDbNotSupport: 'Your browser is not supprt indexDb, please update your browser',
@@ -92,5 +95,8 @@ export default {
     sendAmount: 'Send Amount',
     fee: 'Fee',
     balance: 'Balance',
+  },
+  connect: {
+    allow: 'Allow the website to access your account?',
   },
 };

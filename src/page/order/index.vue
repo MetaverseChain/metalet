@@ -66,7 +66,7 @@ import { mapGetters } from 'vuex';
 import { sendMessageFromExtPageToBackground } from '@/util/chromeUtil';
 import i18n from '@/i18n';
 import { spaceTosatoshis } from '@/util';
-
+import { Decimal } from 'decimal.js';
 export default {
   name: 'page-order',
   computed: {
@@ -77,7 +77,7 @@ export default {
       return this.$route.query.sendAddress;
     },
     sendAmount() {
-      return this.$route.query.sendAmount;
+      return Number(this.$route.query.sendAmount) || 0;
     },
     allowSubmit() {
       if (this.balance > 0) {
@@ -88,7 +88,7 @@ export default {
   data() {
     return {
       orderStep: 0, // 0:ready, 1:success
-      fee: this.$route.query.fee || 0,
+      fee: Number(this.$route.query.fee) || 0,
       balance: 0,
     };
   },
@@ -127,11 +127,13 @@ export default {
         return this.$toast({ message: i18n('home.pleaseInputAmount') });
       }
       const satoshi = +this.sendAmount;
-      console.log(satoshi);
       if (satoshi < 2000) {
         return this.$toast({ message: i18n('home.amountMoreThan2000') });
       }
-      if (satoshi + this.fee >= this.balance) {
+      console.log('余额', satoshi, this.fee, this.balance);
+      if (
+        new Decimal(satoshi).add(new Decimal(this.fee).toNumber()).toNumber() >= new Decimal(this.balance).toNumber()
+      ) {
         return this.$toast({ message: i18n('home.amountNotEnough') });
       }
       const loading = this.$loading();
