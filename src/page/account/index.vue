@@ -80,7 +80,7 @@
 </template>
 <script>
 import i18n from '@/i18n';
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import { sendMessageFromExtPageToBackground } from '@/util/chromeUtil';
 
 export default {
@@ -119,6 +119,7 @@ export default {
   },
   methods: {
     ...mapActions('account', ['setCurrentAccount']),
+    ...mapGetters('system', ['config', 'locale', 'networkType']),
     async getMnemonicWords() {
       const { data } = await sendMessageFromExtPageToBackground('getMnemonicWords');
       this.mnemonicWords = data;
@@ -133,7 +134,8 @@ export default {
         email: this.email,
         phone: this.phone,
       });
-      await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
+      //屏蔽生成metaid
+      // await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
       sendMessageFromExtPageToBackground('saveCurrentAccount', data);
       this.setCurrentAccount(data);
       loading.close();
@@ -143,19 +145,24 @@ export default {
     },
     async restoreAccount() {
       const loading = this.$loading({});
-      const { data } = await sendMessageFromExtPageToBackground('restoreAccount', {
-        mnemonicStr: this.mnemonicStr,
-        derivationPath: this.derivationPath,
-        xprv: this.xprv,
-        restoreType: this.restoreType,
-      });
-      await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
-      sendMessageFromExtPageToBackground('saveCurrentAccount', data);
-      this.setCurrentAccount(data);
-      loading.close();
-      this.$router.replace({
-        path: '/',
-      });
+      try {
+        const { data } = await sendMessageFromExtPageToBackground('restoreAccount', {
+          mnemonicStr: this.mnemonicStr,
+          derivationPath: this.derivationPath,
+          xprv: this.xprv,
+          restoreType: this.restoreType,
+        });
+        await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
+        sendMessageFromExtPageToBackground('saveCurrentAccount', data);
+        this.setCurrentAccount(data);
+        loading.close();
+        this.$router.replace({
+          path: '/',
+        });
+      } catch (error) {
+        loading.close();
+        this.$toast({ message: i18n('home.mnemonicInputFail') });
+      }
     },
   },
 };

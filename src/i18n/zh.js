@@ -77,6 +77,7 @@ export default {
     fee: '上链费',
     total: '总计',
     confirmToSend: '是否确认转账',
+    mnemonicInputFail: '助记词输入有误，请检查后重新输入',
   },
   menu: {
     editAccount: '编辑账号',

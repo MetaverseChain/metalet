@@ -1,13 +1,15 @@
 {
   "name": "mvc-wallet",
-  "version": "0.0.10",
+  "version": "0.0.19",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "webpack -c webpack.config.js --env env=development --mode=development --watch",
+    "prod": "webpack -c webpack.config.js --env env=production --mode=production --watch",
     "build": "webpack -c webpack.config.js --env env=production --mode=production",
     "build:watch": "webpack -c webpack.config.js --env env=production --mode=production --watch",
     "serve": "webpack serve -c webpack.config.js --env env=development --mode=development",
+    "serve:prod": "webpack serve -c webpack.config.js --env env=production --mode=production",
     "fmt": "prettier -w \"./src/**/*.*\""
   },
   "author": "",

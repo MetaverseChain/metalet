@@ -61,21 +61,21 @@ export function uploadXpub(xPub) {
 
 export function getFtBalance(address) {
   return get({
-    url: `/sensible/ft/address/${address}/balance`,
-    host: config.CONFIG_API_HOST,
+    url: `/contract/ft/address/${address}/balance`,
+    host: config.networkType === 'test' ? config.CONFIG_API_HOST_TEST : config.CONFIG_API_HOST,
   });
 }
 
 export function getNftSummary(address) {
   return get({
-    url: `/sensible/nft/address/${address}/summary`,
-    host: config.CONFIG_API_HOST,
+    url: `/contract/nft/address/${address}/summary`,
+    host: config.networkType === 'test' ? config.CONFIG_API_HOST_TEST : config.CONFIG_API_HOST,
   });
 }
 
 export function getNftUtxo(address) {
   return get({
-    url: `/sensible/nft/address/${address}/utxo`,
-    host: config.CONFIG_API_HOST,
+    url: `/contract/nft/address/${address}/utxo`,
+    host: config.networkType === 'test' ? config.CONFIG_API_HOST_TEST : config.CONFIG_API_HOST,
   });
 }

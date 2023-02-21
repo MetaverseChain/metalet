@@ -27,7 +27,7 @@
           <hr class="mo-divider" />
           <mo-form-item submitItem style="text-align: center">
             <mo-button simple @click="handleCancel">{{ $t('cancel') }}</mo-button>
-            <mo-button @click="handleConfirm">{{ $t('confirm') }}</mo-button>
+            <mo-button :disabled="allowSubmit" @click="handleConfirm">{{ $t('confirm') }}</mo-button>
           </mo-form-item>
         </mo-form>
       </template>
@@ -78,6 +78,11 @@ export default {
     },
     sendAmount() {
       return this.$route.query.sendAmount;
+    },
+    allowSubmit() {
+      if (this.balance > 0) {
+        return false;
+      } else return true;
     },
   },
   data() {

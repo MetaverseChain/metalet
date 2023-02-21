@@ -77,6 +77,7 @@ export default {
     fee: 'Fee',
     total: 'Total',
     confirmToSend: 'Are you confirm to send',
+    mnemonicInputFail: 'The mnemonic was entered incorrectly, please check and re-enter',
   },
   menu: {
     editAccount: 'Edit Account',

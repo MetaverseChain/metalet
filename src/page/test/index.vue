@@ -63,8 +63,8 @@ export default {
         email: '789',
         phone: '000',
       });
-      const res = await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
-      console.log(res);
+      // const res = await sendMessageFromExtPageToBackground('checkOrCreateMetaId', data);
+      // console.log(res);
     },
   },
 };

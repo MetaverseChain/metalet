@@ -14,7 +14,8 @@ export async function initData() {
     const hasAccount = data.find((v) => v.xprv === lastAccount);
     if (hasAccount) {
       await store.dispatch('account/setCurrentAccount', hasAccount);
-      await sendMessageFromExtPageToBackground('checkOrCreateMetaId', hasAccount);
+      //屏蔽生成metaid
+      // await sendMessageFromExtPageToBackground('checkOrCreateMetaId', hasAccount);
       sendMessageFromExtPageToBackground('saveCurrentAccount', hasAccount);
     }
   }

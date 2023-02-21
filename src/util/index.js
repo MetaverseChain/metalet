@@ -75,8 +75,9 @@ export function computeHtmlFontSize() {
 
 // 获取用户浏览器语言
 export function getLocateLanguage() {
-  const lang = ((navigator.language ? navigator.language : navigator.userLanguage) || 'en').toLowerCase();
-  return lang.split('-')[0];
+  return 'en';
+  // const lang = ((navigator.language ? navigator.language : navigator.userLanguage) || 'en').toLowerCase();
+  // return lang.split('-')[0];
 }
 
 // 单位换算

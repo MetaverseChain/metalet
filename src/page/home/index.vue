@@ -293,7 +293,7 @@ export default {
       this.$refs.outsideBtn.click();
     },
     handleOpenHistory() {
-      window.open(`https://scan.mvc.space/address/${this.account.address}`);
+      window.open(`https://mvcscan.com/address/${this.account.address}`);
     },
     async handleOpenSendDialog() {
       this.showSendDialog = true;
